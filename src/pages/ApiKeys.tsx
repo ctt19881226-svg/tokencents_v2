@@ -1,9 +1,11 @@
-import React from 'react';
-import { Copy, Check, Plus, Eye, EyeOff } from "lucide-react";
+import React, { useState } from 'react';
+import { Copy, Check, Plus, Eye, EyeOff, CreditCard } from "lucide-react";
+import { PaymentModal } from '../components/PaymentModal';
 
 export function ApiKeys() {
-  const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
-  const [showKey, setShowKey] = React.useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [showKey, setShowKey] = useState<string | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const keys = [
     { id: "1", name: "Dev-App", key: "sk-5128a8c9b2e4d7f6x92a", created: "2023-10-01", usage: "125k tokens", status: "Active" },
@@ -36,12 +38,21 @@ export function ApiKeys() {
 
       {/* Quota Card */}
       <div className="bg-[#18181b] border border-zinc-800 rounded-lg p-6 mb-8">
-        <div className="flex justify-between items-end mb-2">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 sm:mb-2 gap-4">
           <div>
-            <h3 className="text-sm font-medium text-zinc-400 mb-1">Current Plan: Pro</h3>
-            <div className="text-2xl font-semibold text-zinc-100">$12.50 <span className="text-sm font-normal text-zinc-500">/ $50.00 limit</span></div>
+            <h3 className="text-sm font-medium text-zinc-400 mb-1">Current Plan: Pay as you go</h3>
+            <div className="text-2xl font-semibold text-zinc-100">$12.50 <span className="text-sm font-normal text-zinc-500">/ $50.00 balance</span></div>
           </div>
-          <div className="text-sm text-zinc-400">25% used</div>
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="text-sm text-zinc-400">25% used</div>
+            <button 
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+            >
+              <CreditCard size={14} />
+              Top Up
+            </button>
+          </div>
         </div>
         <div className="w-full bg-zinc-800 rounded-full h-2.5">
           <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: '25%' }}></div>
@@ -92,6 +103,8 @@ export function ApiKeys() {
           </tbody>
         </table>
       </div>
+
+      <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
     </div>
   );
 }

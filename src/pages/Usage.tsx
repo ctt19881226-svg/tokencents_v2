@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { CreditCard } from 'lucide-react';
+import { PaymentModal } from '../components/PaymentModal';
 
 export function Usage() {
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const data = [
     { name: 'Mon', tokens: 4000 },
     { name: 'Tue', tokens: 3000 },
@@ -20,9 +23,18 @@ export function Usage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-zinc-100">Usage & Billing</h1>
-        <p className="text-zinc-400 mt-1">Monitor your API consumption and costs.</p>
+      <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-zinc-100">Usage & Billing</h1>
+          <p className="text-zinc-400 mt-1">Monitor your API consumption and costs.</p>
+        </div>
+        <button 
+          onClick={() => setIsPaymentModalOpen(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+        >
+          <CreditCard size={16} />
+          Add Funds
+        </button>
       </header>
 
       {/* Stat Cards */}
@@ -79,6 +91,8 @@ export function Usage() {
           </div>
         </div>
       </div>
+
+      <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
     </div>
   );
 }
