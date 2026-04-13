@@ -4,9 +4,10 @@ import { X, CreditCard, CheckCircle2, Loader2 } from 'lucide-react';
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: (amount: number) => void;
 }
 
-export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) {
   const [amount, setAmount] = useState<number>(25);
   const [status, setStatus] = useState<'idle' | 'processing' | 'success'>('idle');
 
@@ -18,6 +19,7 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
     // Mock payment processing delay
     setTimeout(() => {
       setStatus('success');
+      if (onSuccess) onSuccess(amount);
       // Auto close after success
       setTimeout(() => {
         setStatus('idle');
