@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ApiKeys } from './pages/ApiKeys';
 import { Usage } from './pages/Usage';
@@ -11,18 +11,59 @@ import { Playground } from './pages/Playground';
 import { Docs } from './pages/Docs';
 import { Landing } from './pages/Landing';
 import { Auth } from './pages/Auth';
-import { Menu, Activity } from 'lucide-react';
+import { Menu, Activity, Loader2 } from 'lucide-react';
+import { supabase } from './lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 export default function App() {
   const [route, setRoute] = useState<'landing' | 'auth' | 'dashboard'>('landing');
   const [activePage, setActivePage] = useState('keys');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  if (route === 'landing') {
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        setRoute('dashboard');
+      }
+      setIsInitializing(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        setRoute('dashboard');
+      } else {
+        setRoute('landing');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  if (isInitializing) {
+    return (
+      <div className="h-screen w-screen bg-black flex items-center justify-center text-indigo-500">
+        <Loader2 className="animate-spin w-8 h-8" />
+      </div>
+    );
+  }
+
+  if (route === 'landing' && !session) {
     return <Landing onEnterDashboard={() => setRoute('auth')} />;
   }
 
-  if (route === 'auth') {
+  if (route === 'auth' && !session) {
     return <Auth onLogin={() => setRoute('dashboard')} onBack={() => setRoute('landing')} />;
   }
 
@@ -59,7 +100,7 @@ export default function App() {
             setActivePage(page);
             setIsMobileMenuOpen(false);
           }} 
-          onLogout={() => setRoute('landing')} 
+          onLogout={handleLogout} 
         />
       </div>
 
