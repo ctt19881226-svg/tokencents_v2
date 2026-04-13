@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Check, Plus, CreditCard, AlertCircle, X, Loader2 } from "lucide-react";
-import { PaymentModal } from '../components/PaymentModal';
+import { Copy, Check, Plus, Coins, AlertCircle, X, Loader2 } from "lucide-react";
 import { supabase } from '../lib/supabase';
 
 export function ApiKeys() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [keys, setKeys] = useState<any[]>([]);
-  const [balance, setBalance] = useState<number>(0);
+  const [quota, setQuota] = useState({ total_quota: 0, used_this_month: 0, remaining: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal states
@@ -31,7 +29,16 @@ export function ApiKeys() {
     ]);
 
     if (keysRes.data) setKeys(keysRes.data);
-    if (userRes.data) setBalance(Number(userRes.data.balance) || 0);
+    
+    const totalQuota = Math.floor(Number(userRes.data?.balance) || 0);
+    const usedTokens = keysRes.data?.reduce((acc, key) => acc + (Number(key.total_tokens) || 0), 0) || 0;
+    
+    setQuota({
+      total_quota: totalQuota,
+      used_this_month: usedTokens,
+      remaining: Math.max(0, totalQuota - usedTokens)
+    });
+    
     setIsLoading(false);
   };
 
@@ -87,14 +94,6 @@ export function ApiKeys() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handlePaymentSuccess = async (amount: number) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const newBalance = balance + amount;
-    await supabase.from('users').update({ balance: newBalance }).eq('id', user.id);
-    setBalance(newBalance);
-  };
-
   return (
     <div className="max-w-5xl mx-auto">
       <header className="flex justify-between items-center mb-8">
@@ -108,23 +107,38 @@ export function ApiKeys() {
         </button>
       </header>
 
-      {/* Quota Card */}
+      {/* Token Quota Card */}
       <div className="bg-[#18181b] border border-zinc-800 rounded-lg p-6 mb-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 sm:mb-2 gap-4">
           <div>
-            <h3 className="text-sm font-medium text-zinc-400 mb-1">Current Plan: Pay as you go</h3>
-            <div className="text-2xl font-semibold text-zinc-100">${balance.toFixed(2)} <span className="text-sm font-normal text-zinc-500">balance</span></div>
+            <h3 className="text-sm font-medium text-zinc-400 mb-1">Token Quota (Monthly)</h3>
+            {isLoading ? (
+              <div className="text-2xl font-semibold text-zinc-100">Loading...</div>
+            ) : (
+              <div className="text-2xl font-semibold text-zinc-100">
+                {quota.remaining.toLocaleString()} <span className="text-sm font-normal text-zinc-500">/ {quota.total_quota.toLocaleString()} tokens</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-            <button 
-              onClick={() => setIsPaymentModalOpen(true)}
-              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
-            >
-              <CreditCard size={14} />
-              Top Up
-            </button>
+            <div className="text-sm text-zinc-400">
+              {quota.total_quota > 0 ? Math.round((quota.used_this_month) / quota.total_quota * 100) : 0}% used
+            </div>
+            <div className="bg-zinc-800 text-zinc-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+              <Coins size={14} />
+              Free Plan
+            </div>
           </div>
         </div>
+        <div className="w-full bg-zinc-800 rounded-full h-2.5">
+          <div
+            className="bg-indigo-600 h-2.5 rounded-full transition-all"
+            style={{ width: `${quota.total_quota > 0 ? (quota.used_this_month / quota.total_quota * 100) : 0}%` }}
+          ></div>
+        </div>
+        <p className="text-xs text-zinc-500 mt-2">
+          Contact admin to request more token quota
+        </p>
       </div>
 
       {/* API Key Table */}
@@ -173,8 +187,6 @@ export function ApiKeys() {
           </tbody>
         </table>
       </div>
-
-      <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSuccess={handlePaymentSuccess} />
 
       {/* Create Key Modal */}
       {showCreateModal && (
