@@ -47,6 +47,42 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Inactivity timeout effect
+  useEffect(() => {
+    if (!session) return;
+
+    let timeoutId: number;
+
+    const logout = async () => {
+      await supabase.auth.signOut();
+      alert("You have been logged out due to 10 minutes of inactivity.");
+    };
+
+    const resetTimer = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(logout, 10 * 60 * 1000); // 10 minutes
+    };
+
+    resetTimer();
+
+    let isThrottled = false;
+    const handleActivity = () => {
+      if (!isThrottled) {
+        resetTimer();
+        isThrottled = true;
+        setTimeout(() => { isThrottled = false; }, 1000); // Throttle to 1s
+      }
+    };
+
+    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, handleActivity));
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      events.forEach(event => window.removeEventListener(event, handleActivity));
+    };
+  }, [session]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
