@@ -1,46 +1,84 @@
-import React, { useState } from 'react';
-import { Play, Settings2, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Play, Settings2, Clock, AlertCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export function Playground() {
   const [prompt, setPrompt] = useState('Write a short poem about coding in the dark.');
   const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [latency, setLatency] = useState<number | null>(null);
+  const [error, setError] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('openai/gpt-4o-mini');
+  const [temperature, setTemperature] = useState(0.7);
+  const [maxTokens, setMaxTokens] = useState(1024);
+
+  // Load API key on mount
+  useEffect(() => {
+    const savedKey = localStorage.getItem('playground_api_key');
+    if (savedKey) {
+      setApiKey(savedKey);
+    } else {
+      // Try to auto-fetch an active key from Supabase
+      const fetchKey = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data } = await supabase.from('api_keys').select('*').eq('user_id', user.id).eq('is_active', true).limit(1);
+          // We can't fetch the full key from DB because it's hashed, but we can check if they have one.
+          // The user still needs to paste the full sk-tc-... key.
+        }
+      };
+      fetchKey();
+    }
+  }, []);
+
+  const saveApiKey = (key: string) => {
+    setApiKey(key);
+    localStorage.setItem('playground_api_key', key);
+  };
 
   const handleRun = async () => {
+    if (!apiKey) {
+      setError('Please enter your API key below');
+      return;
+    }
     if (!prompt.trim()) return;
     
     setIsLoading(true);
     setLatency(null);
     setOutput('');
+    setError('');
     
     const startTime = Date.now();
     
     try {
-      const proxyUrl = import.meta.env.VITE_PROXY_URL || "http://13.211.211.10:8000/v1";
+      const proxyUrl = import.meta.env.VITE_PROXY_URL || "https://api.tokencentso.cn/v1";
       const response = await fetch(`${proxyUrl}/chat/completions`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           model: model,
           messages: [
             { role: "user", content: prompt }
-          ]
+          ],
+          temperature: temperature,
+          max_tokens: maxTokens
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      const data = await response.json();
+      
+      if (!response.ok || data.error) {
+        throw new Error(data.error?.message || `API Error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
       const content = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
       setOutput(content);
-    } catch (error: any) {
-      setOutput(`Error: ${error.message}\n\nNote: Since the API is HTTP (http://13.211.211.10:8000) and this site is HTTPS, your browser might block the request due to "Mixed Content" security policies.\n\nTo test this, you may need to allow insecure content for this site in your browser settings (e.g., clicking the site settings icon in the URL bar and allowing insecure content).`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch');
     } finally {
       setIsLoading(false);
       setLatency(Date.now() - startTime);
@@ -63,6 +101,26 @@ export function Playground() {
           {isLoading ? 'Running...' : 'Run'}
         </button>
       </header>
+
+      {/* API Key Input */}
+      <div className="bg-[#18181b] border border-zinc-800 rounded-lg p-4 mb-6">
+        <label className="block text-sm font-medium text-zinc-400 mb-2">API Key</label>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={(e) => saveApiKey(e.target.value)}
+          placeholder="sk-tc-xxxx..."
+          className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none"
+        />
+        <p className="text-xs text-zinc-500 mt-1">Your API key is stored locally in your browser.</p>
+      </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm mb-6 flex items-center gap-2">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
         {/* Left Config */}
@@ -95,14 +153,27 @@ export function Playground() {
           <div>
             <div className="flex justify-between mb-2">
               <label className="block text-sm font-medium text-zinc-400">Temperature</label>
-              <span className="text-sm text-zinc-500">0.7</span>
+              <span className="text-sm text-zinc-500">{temperature}</span>
             </div>
-            <input type="range" min="0" max="2" step="0.1" defaultValue="0.7" className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+            <input 
+              type="range" 
+              min="0" 
+              max="2" 
+              step="0.1" 
+              value={temperature} 
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" 
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-zinc-400 mb-2">Max Tokens</label>
-            <input type="number" defaultValue="1024" className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none" />
+            <input 
+              type="number" 
+              value={maxTokens} 
+              onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+              className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none" 
+            />
           </div>
         </div>
 
