@@ -83,6 +83,12 @@ export function Playground() {
               <option value="openai/gpt-4o">gpt-4o</option>
               <option value="anthropic/claude-3-5-sonnet">claude-3-5-sonnet</option>
               <option value="google/gemini-1.5-pro">gemini-1.5-pro</option>
+              <option value="qwen/qwen-3.6">QWEN 3.6</option>
+              <option value="deepseek/deepseek-v3.2">deepseek v3.2</option>
+              <option value="step/step-3.5">step 3.5</option>
+              <option value="minimax/m2.7">minimax m2.7</option>
+              <option value="mimo/mimo-v2">mimo-v2</option>
+              <option value="kimi/k2.5">kimi k2.5</option>
             </select>
           </div>
 
