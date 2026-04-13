@@ -47,7 +47,7 @@ export function ApiKeys() {
       const randomBytes = new Uint8Array(16);
       crypto.getRandomValues(randomBytes);
       const randomHex = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-      const rawKey = `sk-or-${randomHex}`;
+      const rawKey = `sk-tc-${randomHex}`;
       
       // Hash key
       const msgBuffer = new TextEncoder().encode(rawKey);
