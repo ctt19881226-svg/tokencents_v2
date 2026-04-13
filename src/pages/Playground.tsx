@@ -6,19 +6,44 @@ export function Playground() {
   const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [latency, setLatency] = useState<number | null>(null);
+  const [model, setModel] = useState('openai/gpt-4o-mini');
 
-  const handleRun = () => {
+  const handleRun = async () => {
+    if (!prompt.trim()) return;
+    
     setIsLoading(true);
     setLatency(null);
     setOutput('');
     
-    // Mock API call
     const startTime = Date.now();
-    setTimeout(() => {
-      setOutput('In screens of black, the cursors blink,\nA silent world where coders think.\nThrough logic gates and nested loops,\nThey navigate the data troops.\n\nThe world asleep, the coffee cold,\nNew algorithms, brave and bold.\nIn lines of text, a universe,\nFor better or sometimes for worse.');
+    
+    try {
+      const response = await fetch("http://13.211.211.10:8000/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: "user", content: prompt }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
+      setOutput(content);
+    } catch (error: any) {
+      setOutput(`Error: ${error.message}\n\nNote: Since the API is HTTP (http://13.211.211.10:8000) and this site is HTTPS, your browser might block the request due to "Mixed Content" security policies.\n\nTo test this, you may need to allow insecure content for this site in your browser settings (e.g., clicking the site settings icon in the URL bar and allowing insecure content).`);
+    } finally {
       setIsLoading(false);
       setLatency(Date.now() - startTime);
-    }, 1200);
+    }
   };
 
   return (
@@ -48,10 +73,15 @@ export function Playground() {
           
           <div>
             <label className="block text-sm font-medium text-zinc-400 mb-2">Model</label>
-            <select className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none">
-              <option>gpt-4o</option>
-              <option>claude-3-5-sonnet</option>
-              <option>gemini-1.5-pro</option>
+            <select 
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none"
+            >
+              <option value="openai/gpt-4o-mini">gpt-4o-mini</option>
+              <option value="openai/gpt-4o">gpt-4o</option>
+              <option value="anthropic/claude-3-5-sonnet">claude-3-5-sonnet</option>
+              <option value="google/gemini-1.5-pro">gemini-1.5-pro</option>
             </select>
           </div>
 
