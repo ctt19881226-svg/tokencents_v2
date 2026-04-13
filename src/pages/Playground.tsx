@@ -18,7 +18,8 @@ export function Playground() {
     const startTime = Date.now();
     
     try {
-      const response = await fetch("http://13.211.211.10:8000/v1/chat/completions", {
+      const proxyUrl = import.meta.env.VITE_PROXY_URL || "http://13.211.211.10:8000/v1";
+      const response = await fetch(`${proxyUrl}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
