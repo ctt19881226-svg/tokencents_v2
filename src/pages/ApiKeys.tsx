@@ -122,7 +122,11 @@ export function ApiKeys() {
           </div>
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
             <div className="text-sm text-zinc-400">
-              {quota.total_quota > 0 ? Math.round((quota.used_this_month) / quota.total_quota * 100) : 0}% used
+              {quota.total_quota > 0 
+                ? (quota.used_this_month > 0 && (quota.used_this_month / quota.total_quota * 100) < 1 
+                    ? '< 1' 
+                    : Math.min(100, Math.round((quota.used_this_month / quota.total_quota) * 100)))
+                : (quota.used_this_month > 0 ? 100 : 0)}% used
             </div>
             <div className="bg-zinc-800 text-zinc-400 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
               <Coins size={14} />
@@ -133,7 +137,7 @@ export function ApiKeys() {
         <div className="w-full bg-zinc-800 rounded-full h-2.5">
           <div
             className="bg-indigo-600 h-2.5 rounded-full transition-all"
-            style={{ width: `${quota.total_quota > 0 ? (quota.used_this_month / quota.total_quota * 100) : 0}%` }}
+            style={{ width: `${quota.total_quota > 0 ? Math.min(100, Math.max(quota.used_this_month > 0 ? 1 : 0, (quota.used_this_month / quota.total_quota) * 100)) : (quota.used_this_month > 0 ? 100 : 0)}%` }}
           ></div>
         </div>
         <p className="text-xs text-zinc-500 mt-2">
