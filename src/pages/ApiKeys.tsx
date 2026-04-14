@@ -24,29 +24,21 @@ export function ApiKeys() {
     if (!session) return;
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "https://api.tokencentso.cn/api";
-      
-      const [keysRes, quotaRes] = await Promise.all([
+      const [keysRes, userRes] = await Promise.all([
         supabase.from('api_keys').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }),
-        fetch(`${apiUrl}/auth/quota`, {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`
-          }
-        })
+        supabase.from('users').select('balance').eq('id', session.user.id).single()
       ]);
 
       if (keysRes.data) setKeys(keysRes.data);
       
-      if (quotaRes.ok) {
-        const stats = await quotaRes.json();
-        setQuota({
-          total_quota: stats.total_quota,
-          used_this_month: stats.used_tokens,
-          remaining: stats.remaining
-        });
-      } else {
-        console.error('Failed to fetch quota stats:', await quotaRes.text());
-      }
+      const currentBalance = Math.floor(Number(userRes.data?.balance) || 0);
+      const usedTokens = keysRes.data?.reduce((acc, key) => acc + (Number(key.total_tokens) || 0), 0) || 0;
+      
+      setQuota({
+        total_quota: currentBalance + usedTokens,
+        used_this_month: usedTokens,
+        remaining: currentBalance
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
     }
