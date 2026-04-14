@@ -77,6 +77,14 @@ export function ApiKeys() {
 
       if (error) throw error;
 
+      // Automatically save the new key to localStorage for the Playground
+      if (!localStorage.getItem('playground_api_key')) {
+        localStorage.setItem('playground_api_key', rawKey);
+      } else {
+        // If they already have one, we can overwrite it with the newest one
+        localStorage.setItem('playground_api_key', rawKey);
+      }
+
       setNewlyCreatedKey(rawKey);
       setShowCreateModal(false);
       setNewKeyName('');

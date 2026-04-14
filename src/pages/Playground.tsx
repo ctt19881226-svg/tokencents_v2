@@ -8,29 +8,10 @@ export function Playground() {
   const [isLoading, setIsLoading] = useState(false);
   const [latency, setLatency] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('playground_api_key') || '');
   const [model, setModel] = useState('openai/gpt-4o-mini');
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(1024);
-
-  // Load API key on mount
-  useEffect(() => {
-    const savedKey = localStorage.getItem('playground_api_key');
-    if (savedKey) {
-      setApiKey(savedKey);
-    } else {
-      // Try to auto-fetch an active key from Supabase
-      const fetchKey = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data } = await supabase.from('api_keys').select('*').eq('user_id', user.id).eq('is_active', true).limit(1);
-          // We can't fetch the full key from DB because it's hashed, but we can check if they have one.
-          // The user still needs to paste the full sk-tc-... key.
-        }
-      };
-      fetchKey();
-    }
-  }, []);
 
   const saveApiKey = (key: string) => {
     setApiKey(key);
