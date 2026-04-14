@@ -30,13 +30,13 @@ export function ApiKeys() {
 
     if (keysRes.data) setKeys(keysRes.data);
     
-    const totalQuota = Math.floor(Number(userRes.data?.balance) || 0);
+    const currentBalance = Math.floor(Number(userRes.data?.balance) || 0);
     const usedTokens = keysRes.data?.reduce((acc, key) => acc + (Number(key.total_tokens) || 0), 0) || 0;
     
     setQuota({
-      total_quota: totalQuota,
+      total_quota: currentBalance + usedTokens,
       used_this_month: usedTokens,
-      remaining: Math.max(0, totalQuota - usedTokens)
+      remaining: currentBalance
     });
     
     setIsLoading(false);
