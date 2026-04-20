@@ -8,6 +8,7 @@ import { Sidebar } from './components/Sidebar';
 import { ApiKeys } from './pages/ApiKeys';
 import { Usage } from './pages/Usage';
 import { Playground } from './pages/Playground';
+import { Agents } from './pages/Agents';
 import { Docs } from './pages/Docs';
 import { Landing } from './pages/Landing';
 import { Auth } from './pages/Auth';
@@ -111,6 +112,8 @@ export default function App() {
         return <Usage />;
       case 'playground':
         return <Playground />;
+      case 'agents':
+        return <Agents />;
       case 'docs':
         return <Docs />;
       default:

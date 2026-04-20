@@ -1,4 +1,4 @@
-import { Key, BarChart, Play, Book, Settings, LogOut, Activity } from "lucide-react";
+import { Key, BarChart, Play, Book, Settings, LogOut, Activity, Bot } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface SidebarProps {
@@ -12,6 +12,7 @@ export function Sidebar({ activePage, setActivePage, onLogout }: SidebarProps) {
     { id: "keys", icon: Key, label: "API Keys" },
     { id: "usage", icon: BarChart, label: "Usage" },
     { id: "playground", icon: Play, label: "Playground" },
+    { id: "agents", icon: Bot, label: "Agents" },
     { id: "docs", icon: Book, label: "Docs" },
   ];
 
